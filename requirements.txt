@@ -2,4 +2,4 @@ flask
 slack_sdk
 requests
 gunicorn
-google
+google-genai
