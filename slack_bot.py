@@ -6,14 +6,15 @@ import os
 
 app = Flask(__name__)
 
-SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")  
+SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+GEMINI_API_TOKEN = os.environ.get("GEMINI_API_TOKEN")
 
 client = WebClient(token=SLACK_BOT_TOKEN)
 
-url = "https://aiplatform.dev51.cbf.dev.paypalinc.com/byoa/orch-varvenkate-71672/api/v1/infer/a3bb9330-6b83-43b9-b8bb-65d268483af4"
+url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 headers = {
     "Content-Type": "application/json",
-    "X-UserID": "varvenkatesh"
+    "Authorization": f"Bearer {GEMINI_API_TOKEN}"
 }
 
 @app.route('/', methods=['POST','GET'])
@@ -39,15 +40,16 @@ def slack_events():
 
         # Prepare payload
         payload = {
-            "inputs": {
-                "Chat Input": text
-            }
+            "contents": [
+                {"parts": [{"text": text}]}
+            ]
         }
-        # Make POST request
         response = requests.post(url, headers=headers, json=payload)
-        # Print response
         response_json = response.json()
-        answer = response_json["outputs"][0]["outputs"][0]["Chat Output"]
+        try:
+            answer = response_json["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError):
+            answer = "Sorry, I couldn't get a response from Gemini."
 
 
         # Post the result back to Slack channel
